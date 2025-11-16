@@ -64,5 +64,3 @@ For a deeper dive, see the full architecture document: [ARCH.md](ARCH.md)
 - State lives in a closure: `wallet_core.make_wallet` provides `deposit/withdraw/snapshot` that close over private `balances`.
 - Side effects at the edges: parsing/printing/CLI; application use case orchestrates pure functions via a typed `WalletPort`.
 - Benefits: easy testing, predictable behavior, safe composition, and clear boundaries between pure and impure code.
-
-```
