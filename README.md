@@ -48,14 +48,12 @@ uv run black src/ tests/
 - Facade:
   - `wallet.py` re-exports and wires pieces into a tiny API
 
-Project layout:
-```
-src/hedix_wallet/
-  wallet.py   domain/  application/  adapters/  main.py
-tests/ (unit + integration)
-```
+For a deeper dive, see the full architecture document: [ARCH.md](ARCH.md)
 
-Example final result:
-```
-Expected Output: BTC: 1.0, ETH: 5.0, USD: 700.0
+## Functional paradigm
+- Core logic is pure: reducers (`compute_next_balances`, `compute_balances`) return new states without mutating inputs.
+- State lives in a closure: `wallet_core.make_wallet` provides `deposit/withdraw/snapshot` that close over private `balances`.
+- Side effects at the edges: parsing/printing/CLI; application use case orchestrates pure functions via a typed `WalletPort`.
+- Benefits: easy testing, predictable behavior, safe composition, and clear boundaries between pure and impure code.
+
 ```
