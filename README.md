@@ -20,12 +20,19 @@ docker build -t hedix-wallet .
 docker run --rm hedix-wallet
 ```
 
-Tests:
-```bash
-uv run pytest
-uv run ruff check src/ tests/
-uv run black src/ tests/
-```
+## Tests
+- How to run:
+  - All tests: `uv run pytest`
+  - Unit only: `uv run pytest tests/unit/`
+  - Integration only: `uv run pytest tests/integration/`
+- Unit suites:
+  - `tests/unit/test_wallet.py` (closure API), `test_transaction.py` (ops), `test_use_case.py` (orchestration),
+    `test_cli_adapter.py` (parse/format), `test_reducers.py` (pure reducers).
+- Integration suites:
+  - `tests/integration/test_example_scenario.py` (spec example),
+    `test_edge_cases.py` (edge cases), `test_state_isolation.py` (state isolation).
+- Approach:
+  - Prefer pure function tests for determinism; stateful behavior tested via the closure and the use case.
 
 ## Public API (facade)
 - `make_wallet()` → `(deposit, withdraw, snapshot, process)`:
@@ -36,17 +43,19 @@ uv run black src/ tests/
 - `parse_transaction(str)` → Transaction
 - `format_balances(balances)` → str
 
-## Architecture (functional hexagonal)
-- Domain:
-  - `wallet_core.make_wallet` (closure over state)
-  - Pure reducers: `reducers.compute_next_balances`, `reducers.compute_balances`
-  - Typed models: `types.py` (Asset, Transaction, Balances, PositiveDecimal)
-- Application:
-  - `use_cases.process_transactions` with a `WalletPort` Protocol
-- Adapters:
-  - `adapters/cli.py` (parse/format)
+## Architecture (hexagonal focus)
+- Ports (inward-facing interfaces):
+  - `WalletPort` (Protocol) defines the application’s needs: `deposit`, `withdraw`, `snapshot`.
+  - `use_cases.process_transactions` depends only on this port (not on concrete implementations).
+- Adapters (outer layer):
+  - Input/driving adapter: `main.py` (console runner) feeds transactions into the use case.
+  - I/O helpers: `adapters/cli.py` parse/format external representations.
+  - Domain-side adapter: `wallet_core.make_wallet` provides a concrete `WalletPort` (via closures).
+- Flow and boundaries:
+  - External input → adapter (parse) → use case (port) → domain implementation → adapter (format/output).
+  - Dependencies point inward; swapping adapters (e.g., HTTP, DB) requires no changes to the use case.
 - Facade:
-  - `wallet.py` re-exports and wires pieces into a tiny API
+  - `wallet.py` offers a stable import surface, re-exporting the API and composing the pieces.
 
 For a deeper dive, see the full architecture document: [ARCH.md](ARCH.md)
 
